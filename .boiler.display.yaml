@@ -1,0 +1,161 @@
+## Nextion Display
+uart:
+  id: uart_2
+  rx_pin: GPIO18
+  tx_pin: GPIO26
+  baud_rate: 115200
+  ## UART debug for Nextion display
+  # debug:
+  #   direction: BOTH
+  #   dummy_receiver: false
+  #   after:
+  #     delimiter: [0xFF, 0xFF, 0xFF]
+  #   sequence:
+  #     - lambda: UARTDebug::log_string(direction, bytes);
+
+binary_sensor:
+  # Display buttons
+  - platform: nextion
+    page_id: 1
+    component_id: 3
+    id: display_chup
+    internal: true
+    on_press:
+      then:
+        - lambda: |-
+            auto pid = id(internal_pid);
+
+            if (pid->target_temperature >= 30) {
+              ESP_LOGD("nextion", "Reached maximum temperature");
+            } else {
+              auto call = pid->make_call();
+              call.set_target_temperature(pid->target_temperature + 0.5);
+              call.perform();
+            }
+  - platform: nextion
+    page_id: 1
+    component_id: 4
+    id: display_chdown
+    internal: true
+    on_press:
+      then:
+        - lambda: |-
+            auto pid = id(internal_pid);
+
+            if (pid->target_temperature <= 15) {
+              ESP_LOGD("nextion", "Reached minimum temperature");
+            } else {
+              auto call = pid->make_call();
+              call.set_target_temperature(pid->target_temperature - 0.5);
+              call.perform();
+            }
+  - platform: nextion
+    page_id: 1
+    component_id: 2
+    id: display_chenabled
+    internal: true
+    on_press:
+      then:
+        - lambda: |-
+            auto sw = id(ch_enable);
+
+            if (sw->state) {
+              ESP_LOGD("switch", "Turning CH Enabled switch ON");
+              sw->turn_off();
+            } else {
+              ESP_LOGD("switch", "Turning CH Enabled switch OFF");
+              sw->turn_on();
+            }
+  - platform: nextion
+    page_id: 1
+    component_id: 10
+    id: display_dhwenabled
+    internal: true
+    on_press:
+      then:
+        - lambda: |-
+            auto sw = id(dhw_enable);
+
+            if (sw->state) {
+              ESP_LOGD("switch", "Turning DHW Enabled switch ON");
+              sw->turn_off();
+            } else {
+              ESP_LOGD("switch", "Turning DHW Enabled switch OFF");
+              sw->turn_on();
+            }
+
+# Display
+display:
+  - platform: nextion
+    id: nextion_display
+    uart_id: uart_2
+    # touch_sleep_timeout: 60
+    # auto_wake_on_touch: True
+    tft_url: http://ha-estate.local:8123/local/boilotron.tft
+    on_setup:
+      then:
+        lambda: |-
+          id(nextion_display).set_component_value("main.chsetpoint", (int)(round(id(internal_pid)->target_temperature * 10)));
+          id(nextion_display).set_component_value("main.dhwsetpoint", (int)(round(id(dhw_setpoint)->state * 10)));
+          id(nextion_display).set_component_value("main.roomtemp", (int)(round(id(temp_input)->state * 10)));
+          // id(nextion_display).set_component_value("main.dhwtemp", (int)(round(id(temp_dhw_internal)->state * 10))); // We need to scale the float in order to emulate them in Nextion
+          id(nextion_display).set_component_value("main.chenabled", id(ch_enable)->state);
+          id(nextion_display).set_component_value("main.dhwenabled", id(dhw_enable)->state);
+
+          id(nextion_display).goto_page(1);
+    on_page:
+      then:
+        lambda: |-
+          if (x == 1) { // Main page. Update flame visibility
+            // First, hide both flames
+            id(nextion_display).hide_component("chflame");
+            id(nextion_display).hide_component("dhwflame");
+
+            if (id(boiler_flame_on)->state) {
+              if (id(ch_active)->state) {
+                ESP_LOGD("boot", "Sending command to show CH flame");
+                id(nextion_display).show_component("chflame"); // Show/hide works only on current page, so no page specifier even when component scope is global
+              } else if (id(dhw_active)->state) {
+                ESP_LOGD("boot", "Sending command to show water flame");
+                id(nextion_display).show_component("dhwflame"); // Show/hide works only on current page, so no page specifier even when component scope is global
+              }
+            }
+          }
+
+button:
+  - platform: template
+    id: upload_tft
+    name: "Upload TFT"
+    entity_category: config
+    on_press:
+      then:
+        - lambda: |-
+            id(nextion_display).upload_tft();
+
+script:
+  - id: display_set_float
+    parameters:
+      name: string
+      value: float
+    then:
+      - lambda: |-
+          id(nextion_display).set_component_value(name.c_str(), (int)(round(value * 10)));
+  - id: display_set_checkbox
+    parameters:
+      name: string
+      enabled: int
+    then:
+      - lambda: |-
+          id(nextion_display).set_component_value(name.c_str(), enabled);
+  - id: display_show_component
+    parameters:
+      name: string
+    then:
+      - lambda: |-
+          id(nextion_display).show_component(name.c_str());
+  - id: display_hide_component
+    parameters:
+      name: string
+    then:
+      - lambda: |-
+          id(nextion_display).hide_component(name.c_str());

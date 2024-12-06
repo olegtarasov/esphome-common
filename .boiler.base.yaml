@@ -1,0 +1,181 @@
+globals:
+  # We need this workaround state storage because referencing `boiler_flame_on` directly from `ch_active` or `dhw_active`
+  # creates an infinite loop during code generation. This is weird and probably needs investigating
+  - id: flame_on
+    type: bool
+    initial_value: "false"
+
+external_components:
+  source: github://olegtarasov/esphome-opentherm@v1.0.5-pre2
+  refresh: 0s
+
+# Platforms
+## Boiler
+opentherm:
+  in_pin: 17
+  out_pin: 16
+  sync_mode: true
+
+## Temperature sensors
+one_wire:
+  - platform: gpio
+    pin: GPIO05
+
+output:
+  - platform: opentherm
+    t_set:
+      id: ch_setpoint
+      min_value: 40
+      max_value: 60
+      zero_means_zero: true
+
+# Knobs and stuff
+number:
+  # Boiler config
+  - platform: opentherm
+    t_dhw_set:
+      id: dhw_setpoint
+      name: "Hot Water Setpoint"
+      min_value: 20
+      max_value: 60
+      restore_value: true
+      initial_value: 60
+      on_value:
+        then:
+          - lambda: |-
+              id(display_set_float)->execute("main.dhwsetpoint", x);
+
+switch:
+  - platform: opentherm
+    ch_enable:
+      id: ch_enable
+      name: "Central Heating enabled"
+      restore_mode: RESTORE_DEFAULT_OFF
+      internal: true # We are now controlling this setting through PID 'mode' property
+      on_turn_on:
+        then:
+          - lambda: |-
+              id(display_set_checkbox)->execute("main.chenabled", 1);
+              auto pid = id(internal_pid);
+              if (pid->mode != CLIMATE_MODE_HEAT) {
+                auto call = pid->make_call();
+                call.set_mode(CLIMATE_MODE_HEAT);
+                call.perform();
+              }
+      on_turn_off:
+        then:
+          - lambda: |-
+              id(display_set_checkbox)->execute("main.chenabled", 0);
+              auto pid = id(internal_pid);
+              if (pid->mode != CLIMATE_MODE_OFF) {
+                auto call = pid->make_call();
+                call.set_mode(CLIMATE_MODE_OFF);
+                call.perform();
+              }
+
+    dhw_enable:
+      id: dhw_enable
+      name: "Hot Water enabled"
+      restore_mode: RESTORE_DEFAULT_OFF
+      on_turn_on:
+        then:
+          - lambda: |-
+              id(display_set_checkbox)->execute("main.dhwenabled", 1);
+      on_turn_off:
+        then:
+          - lambda: |-
+              id(display_set_checkbox)->execute("main.dhwenabled", 0);
+
+sensor:
+  # Boiler control signal sensor
+  - platform: template
+    id: final_pid_output
+    name: "Final PID Output"
+    accuracy_decimals: 2
+    entity_category: diagnostic
+  # Boiler sensors
+  - platform: opentherm
+    rel_mod_level:
+      id: rel_mod_level
+      name: "Modulation"
+    t_boiler:
+      id: temperature_ch
+      name: "Boiler Feed Temperature"
+  # Temperature sensors
+  - platform: dallas_temp
+    address: ${temp_room_address}
+    name: "Room Temperature"
+    id: temp_room
+    accuracy_decimals: 2
+    # At first the update interval was 10s and it worked fine. After I added more sensors, I started to get scratchpad checksum errors.
+    # The theory is that not all sensors can calculate temperature in time before the next update.
+    # So the theory is increasing update interval will help with checksum errors.
+    # Later: Occasional scratchpad errors didn't go away. Will leave interval at 30s regardless.
+    update_interval: 30s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 5 # Average over this number of last measurements
+          send_every: 2 # When sensor update interval is 30s, new value will be pushed every minute
+    on_value:
+      then:
+        - lambda: |-
+            if (!id(ha_status).state || !id(use_ha_thermostat).state) {
+              id(temp_input).publish_state(x);
+            }
+
+binary_sensor:
+  # OpenTherm sensors
+  - platform: opentherm
+    ch_active:
+      id: ch_active
+      name: "Central Heating active"
+      on_state:
+        then:
+          - lambda: |-
+              if (x && id(flame_on)) {
+                id(display_show_component)->execute("chflame"); // Show/hide works only on current page, so no page specifier even when component scope is global
+              } else {
+                id(display_hide_component)->execute("chflame");
+              }
+    dhw_active:
+      id: dhw_active
+      name: "Hot Water active"
+      on_state:
+        then:
+          - lambda: |-
+              if (x && id(flame_on)) {
+                id(display_show_component)->execute("dhwflame");
+              } else {
+                id(display_hide_component)->execute("dhwflame");
+              }
+    flame_on:
+      id: boiler_flame_on
+      name: "Flame"
+      on_state:
+        then:
+          - lambda: |-
+              id(flame_on) = x;
+              if (x) {
+                if (id(ch_active)->state) {
+                  ESP_LOGD("boot", "Sending command to show CH flame");
+                  id(display_show_component)->execute("chflame");
+                } else if (id(dhw_active)->state) {
+                  ESP_LOGD("boot", "Sending command to show water flame");
+                  id(display_show_component)->execute("dhwflame");
+                }
+              } else {
+                id(display_hide_component)->execute("chflame");
+                id(display_hide_component)->execute("dhwflame");
+              }
+    fault_indication:
+      id: boiler_fault
+      name: "Boiler Fault"
+      entity_category: diagnostic
+    diagnostic_indication:
+      id: boiler_diagnostic
+      name: "Boiler Diagnostic"
+      entity_category: diagnostic
+  - platform: template
+    id: final_pid_ha
+    name: "Using HA PID"
+    entity_category: diagnostic

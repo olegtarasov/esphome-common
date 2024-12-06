@@ -1,0 +1,5 @@
+esp32:
+  board: lolin_s2_mini
+  framework:
+    type: esp-idf
+    version: recommended

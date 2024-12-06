@@ -1,0 +1,60 @@
+sensor:
+  # HA sensors
+  - platform: homeassistant
+    id: temp_min_room_temp
+    entity_id: climate.master_room_climate
+    attribute: current_temperature
+    filters:
+      - heartbeat: 1s
+    on_value:
+      then:
+        - lambda: |-
+            if (id(ha_status).state && id(use_ha_thermostat).state) {
+              id(temp_input).publish_state(x);
+            }
+  - platform: homeassistant
+    id: ha_pid_output
+    entity_id: sensor.master_pid_output
+    on_value:
+      then:
+        - lambda: |-
+            id(send_ha_pid).execute();
+  - platform: homeassistant
+    id: ha_room_setpoint
+    entity_id: climate.master_room_climate
+    attribute: temperature
+    on_value:
+      then:
+        - lambda: |-
+            auto call = id(internal_pid)->make_call();
+            call.set_target_temperature(x);
+            call.perform();
+
+binary_sensor:
+  # HA connection status
+  - platform: status
+    id: ha_status
+    name: "HA Connection Status"
+
+switch:
+  - platform: template
+    name: "Use Home Assistant Thermostat"
+    id: use_ha_thermostat
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+
+script:
+  - id: send_ha_pid
+    then:
+      - lambda: |-
+          if (id(ha_status).state && id(use_ha_thermostat).state && id(internal_pid).mode == CLIMATE_MODE_HEAT) {
+            float value = id(ha_pid_output).state;
+            if (isnan(value)) {
+              ESP_LOGW("pid_ha", "HA PID Output is NaN, will not send to OpenTherm");
+              return;
+            }
+            ESP_LOGD("pid_ha", "Sending HA PID output to OpenTherm: %.2f", value);
+            id(ch_setpoint).write_state(value);
+            id(final_pid_output).publish_state(value);
+            id(final_pid_ha).publish_state(true);
+          }

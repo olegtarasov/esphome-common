@@ -1,0 +1,187 @@
+substitutions:
+  # Device Protection Limits
+  device_max_temp: "70"
+  device_max_current: "1.0"
+  device_max_power: "190"
+
+# Board and preferences
+esp8266:
+  board: esp01_1m
+  restore_from_flash: true
+
+# Temporary, until https://github.com/esphome/esphome/pull/7773 is merged
+external_components:
+  - source: github://olegtarasov/esphome-shelly-dimmer@master
+    refresh: 0s
+
+logger:
+  baud_rate: 0
+  logs:
+    # Dimmer2 component spams INFO with tons of STM32 data
+    shelly_dimmer: WARN
+
+# UART Connection between ESP and STM32 chips
+uart:
+  tx_pin: 1
+  rx_pin: 3
+  baud_rate: 115200
+
+# Provide date and time
+time:
+  - platform: sntp
+    id: time_service
+    timezone: "Europe/Moscow"
+
+sensor:
+  # Setup the NTC (thermistor depends on resistance and ADC)
+  # and setup over-temperature protection
+  - platform: ntc
+    sensor: temp_resistance_reading
+    name: "Device Temperature"
+    id: temp_device
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    icon: "mdi:thermometer"
+    calibration:
+      b_constant: 3350
+      reference_resistance: 10kOhm
+      reference_temperature: 298.15K
+    on_value_range:
+      - above: ${device_max_temp}
+        then:
+          - script.execute:
+              id: script_protect_device
+              measure_name: "temperature"
+              measure_value: ${device_max_temp}
+              measure_unit: "°C"
+
+  # Thermistor definition
+  - platform: resistance
+    id: temp_resistance_reading
+    sensor: temp_analog_reading
+    configuration: DOWNSTREAM
+    resistor: 32kOhm
+
+  # Analog pin reading for the thermistor
+  - platform: adc
+    id: temp_analog_reading
+    pin: A0
+
+  - platform: total_daily_energy
+    name: "Total Daily Energy"
+    id: energy_daily
+    entity_category: "diagnostic"
+    power_id: power
+    icon: "mdi:gauge"
+    state_class: total_increasing
+    device_class: energy
+    accuracy_decimals: 3
+    filters:
+      - multiply: 0.001
+    unit_of_measurement: kWh
+
+binary_sensor:
+  - platform: gpio
+    name: "S1 switch"
+    id: switch_s1
+    pin:
+      number: GPIO14
+      mode: INPUT
+    internal: false
+    on_state:
+      - light.toggle: dimmer
+
+# Use the shelly_dimmer built-in platform
+light:
+  # Monochromatic light using the built-in platform
+  - platform: shelly_dimmer
+    name: Dimmer
+    id: dimmer
+    output_id: shelly
+    restore_mode: RESTORE_DEFAULT_OFF
+    default_transition_length: 0s
+
+    # Voltage Sensor
+    voltage:
+      name: Voltage
+      id: voltage
+      unit_of_measurement: "V"
+      entity_category: "diagnostic"
+      icon: "mdi:sine-wave"
+      device_class: "voltage"
+      state_class: "measurement"
+      accuracy_decimals: 4
+
+    # Current Sensor
+    current:
+      name: Current
+      id: current
+      unit_of_measurement: "A"
+      entity_category: "diagnostic"
+      icon: "mdi:current-ac"
+      device_class: "current"
+      state_class: "measurement"
+      accuracy_decimals: 4
+      on_value_range:
+        - above: ${device_max_current}
+          then:
+            - script.execute:
+                id: script_protect_device
+                measure_name: "current"
+                measure_value: ${device_max_current}
+                measure_unit: "A"
+
+    # Power Sensor
+    power:
+      name: Power
+      id: power
+      unit_of_measurement: "W"
+      entity_category: "diagnostic"
+      icon: "mdi:flash"
+      device_class: "power"
+      state_class: "measurement"
+      accuracy_decimals: 4
+      on_value_range:
+        - above: ${device_max_power}
+          then:
+            - script.execute:
+                id: script_protect_device
+                measure_name: "power"
+                measure_value: ${device_max_power}
+                measure_unit: "W"
+
+    # Automatic Firmware update for STM32 chip
+    firmware:
+      version: "51.7"
+      update: true
+
+button:
+  - platform: template
+    id: calibrate_button
+    name: "Calibrate"
+    entity_category: config
+    on_press:
+      then:
+        - lambda: |-
+            id(shelly)->start_calibration();
+
+script:
+  # Automatic shutdown protection script
+  # Called when current, temperature or power ratings are exceeded.
+  - id: script_protect_device
+    mode: parallel
+    parameters:
+      measure_name: string
+      measure_value: float
+      measure_unit: string
+    then:
+      - light.turn_off: dimmer
+      - logger.log:
+          format: "Device turned off because %s exceeded %.1f%s"
+          args: ["measure_name", "measure_value", "measure_unit"]
+      - homeassistant.service:
+          service: persistent_notification.create
+          data:
+            title: "Device '${device_name}' self-protected."
+          data_template:
+            message: "Device protection activated. Examine the logs to find out more. Thresholds: ${device_max_temp}°C, ${device_max_current}A, ${device_max_power}W."

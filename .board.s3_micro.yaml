@@ -1,0 +1,11 @@
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: ESP32S3
+  framework:
+    type: esp-idf
+    version: 5.1.2
+    platform_version: 6.5.0
+
+wifi:
+  enable_btm: true
+  enable_rrm: true

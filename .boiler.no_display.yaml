@@ -1,0 +1,27 @@
+script:
+  - id: display_set_float
+    parameters:
+      name: string
+      value: float
+    then:
+      - lambda: |-
+          return;
+  - id: display_set_checkbox
+    parameters:
+      name: string
+      enabled: int
+    then:
+      - lambda: |-
+          return;
+  - id: display_show_component
+    parameters:
+      name: string
+    then:
+      - lambda: |-
+          return;
+  - id: display_hide_component
+    parameters:
+      name: string
+    then:
+      - lambda: |-
+          return;

@@ -1,0 +1,9 @@
+esp32:
+  board: mhetesp32minikit
+  framework:
+    type: esp-idf
+    version: recommended
+
+wifi:
+  enable_btm: true
+  enable_rrm: true

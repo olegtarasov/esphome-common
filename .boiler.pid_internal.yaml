@@ -1,0 +1,96 @@
+output:
+  # Output for internal PID, which is sent to OpenTherm only if there is no connection to HA or using HA PID is
+  # disabled with a switch
+  - platform: template
+    id: internal_pid_output
+    type: float
+    write_action:
+      then:
+        - lambda: |-
+            if(!id(ha_status).state || !id(use_ha_thermostat).state || isnan(id(ha_pid_output).state)) {
+              ESP_LOGD("pid_internal", "Sending internal PID output to OpenTherm: %.2f", state);
+              id(ch_setpoint).write_state(state);
+              id(final_pid_output).publish_state(state);
+              id(final_pid_ha).publish_state(false);
+            }
+
+sensor:
+  # Internal PID input temperature
+  - platform: template
+    id: temp_input
+    internal: true
+    update_interval: never # Other sensors push to this one
+    filters:
+      # PID regulator updates its parameters only on sensor signal, so we push the last value every second
+      # We don't want to actually read the sensor temperature every second, since it would hurt performance.
+      - heartbeat: 1s
+    on_value:
+      then:
+        - lambda: |-
+            id(display_set_float)->execute("main.roomtemp", x);
+  # PID sensors
+  - platform: pid
+    name: "PID Result"
+    type: RESULT
+    accuracy_decimals: 2
+    entity_category: diagnostic
+  - platform: pid
+    name: "PID Error"
+    type: ERROR
+    accuracy_decimals: 2
+    entity_category: diagnostic
+  - platform: pid
+    name: "PID Proportional"
+    type: PROPORTIONAL
+    accuracy_decimals: 2
+    entity_category: diagnostic
+  - platform: pid
+    name: "PID Integral"
+    type: INTEGRAL
+    accuracy_decimals: 2
+    entity_category: diagnostic
+
+# PID
+climate:
+  - platform: pid
+    id: internal_pid
+    name: "Central Heating"
+    heat_output: internal_pid_output
+    default_target_temperature: 23
+    sensor: temp_input
+    visual:
+      min_temperature: 15
+      max_temperature: 30
+      temperature_step:
+        target_temperature: 0.5
+        current_temperature: 0.1
+    control_parameters:
+      kp: 0.5
+      ki: 0.001
+      kd: 0
+    on_control:
+      - lambda: |-
+          auto target = x.get_target_temperature();
+          if (!target.has_value()) {
+            ESP_LOGD("pid", "No value for PID target temperature");
+          } else {
+            ESP_LOGD("pid", "PID setpoint: %f", *target);
+            id(display_set_float)->execute("main.chsetpoint", *target);
+          }
+    on_state:
+      - lambda: |-
+          auto sw = id(ch_enable);
+          if (x.mode == CLIMATE_MODE_OFF && sw->state) {
+            sw->turn_off();
+          } else if (x.mode == CLIMATE_MODE_HEAT && !sw->state) {
+            sw->turn_on();
+          }
+          id(send_ha_pid).execute(); // Will send current PID value from HA if we turned the heating on.
+
+button:
+  - platform: template
+    id: reset_pid_integral
+    name: "Reset PID integral"
+    entity_category: config
+    on_press:
+      - climate.pid.reset_integral_term: internal_pid
