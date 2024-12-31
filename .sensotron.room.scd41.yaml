@@ -1,0 +1,20 @@
+packages:
+  base: !include .base_device.yaml
+  room: !include .sensotron.room.i2c.yaml
+
+sensor:
+  - platform: scd4x
+    temperature:
+      name: "Temperature"
+      accuracy_decimals: 2
+      filters:
+        - exponential_moving_average:
+            alpha: 0.1
+            send_every: 10
+    humidity:
+      name: "Humidity"
+      accuracy_decimals: 2
+    co2:
+      name: "CO2"
+    temperature_offset: ${temp_room_offset}
+    update_interval: 10s

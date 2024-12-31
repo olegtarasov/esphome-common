@@ -1,0 +1,19 @@
+sensor:
+  - platform: bme280_i2c
+    address: 0x76
+    temperature:
+      name: "Temperature"
+      accuracy_decimals: 2
+      filters:
+        - offset: ${temp_room_offset}
+        - exponential_moving_average:
+            alpha: 0.1
+            send_every: 10
+    pressure:
+      name: "Pressure"
+      accuracy_decimals: 2
+    humidity:
+      name: "Humidity"
+      accuracy_decimals: 2
+    iir_filter: 16x
+    update_interval: 10s

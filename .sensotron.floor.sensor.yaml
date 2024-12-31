@@ -1,0 +1,12 @@
+sensor:
+  - platform: dallas_temp
+    id: floor_temp
+    address: ${temp_floor_address}
+    name: "Floor Temperature"
+    one_wire_id: dallas_floor
+    accuracy_decimals: 2
+    update_interval: 30s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 5 # Average over this number of last measurements
+          send_every: 2 # When sensor update interval is 30s, new value will be pushed every minute

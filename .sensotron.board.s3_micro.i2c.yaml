@@ -1,0 +1,6 @@
+packages:
+  board: !include .board.s3_micro.arduino.yaml
+
+i2c:
+  sda: GPIO1
+  scl: GPIO2

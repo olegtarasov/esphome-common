@@ -3,4 +3,22 @@ esp32:
   variant: ESP32S3
   framework:
     type: arduino
-    version: recommended
+
+# Turn off the light on boot
+light:
+  - platform: esp32_rmt_led_strip
+    id: status_light
+    rgb_order: GRB
+    pin: GPIO21
+    num_leds: 1
+    rmt_channel: 0
+    chipset: ws2812
+    name: "Status light"
+    internal: True
+
+esphome:
+  on_boot:
+    then:
+      - light.turn_off:
+          id: status_light
+          transition_length: 0s

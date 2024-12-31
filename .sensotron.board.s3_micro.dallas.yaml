@@ -1,0 +1,7 @@
+packages:
+  board: !include .board.s3_micro.yaml
+
+one_wire:
+  - platform: gpio
+    pin: GPIO2
+    id: dallas_room

@@ -3,6 +3,7 @@ substitutions:
   device_max_temp: "70"
   device_max_current: "1.0"
   device_max_power: "190"
+  update_interval: "10s"
 
 # Board and preferences
 esp8266:
@@ -100,6 +101,7 @@ light:
     output_id: shelly
     restore_mode: RESTORE_DEFAULT_OFF
     default_transition_length: 0s
+    update_interval: ${update_interval}
 
     # Voltage Sensor
     voltage:

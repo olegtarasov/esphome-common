@@ -1,0 +1,31 @@
+bme68x_bsec2_i2c:
+  model: bme680
+  address: 0x77
+  temperature_offset: ${temp_room_offset}
+
+sensor:
+  - platform: bme68x_bsec2
+    temperature:
+      name: "Temperature"
+      accuracy_decimals: 2
+    pressure:
+      name: "Pressure"
+      accuracy_decimals: 2
+    humidity:
+      name: "Humidity"
+      accuracy_decimals: 2
+    gas_resistance:
+      name: "Gas resistance"
+    iaq:
+      name: "IAQ"
+    iaq_static:
+      name: "IAQ Static"
+    co2_equivalent:
+      name: "CO2 Equivalent"
+    breath_voc_equivalent:
+      name: "Breath VOC Equivalent"
+
+text_sensor:
+  - platform: bme68x_bsec2
+    iaq_accuracy:
+      name: "IAQ Accuracy"

@@ -3,9 +3,26 @@ esp32:
   variant: ESP32S3
   framework:
     type: esp-idf
-    version: 5.1.2
-    platform_version: 6.5.0
 
-wifi:
-  enable_btm: true
-  enable_rrm: true
+# wifi:
+#   enable_btm: true
+#   enable_rrm: true
+
+# Turn off the light on boot
+light:
+  - platform: esp32_rmt_led_strip
+    id: status_light
+    rgb_order: GRB
+    pin: GPIO21
+    num_leds: 1
+    rmt_channel: 0
+    chipset: ws2812
+    name: "Status light"
+    internal: True
+
+esphome:
+  on_boot:
+    then:
+      - light.turn_off:
+          id: status_light
+          transition_length: 0s

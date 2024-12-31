@@ -1,0 +1,13 @@
+sensor:
+  - platform: dallas_temp
+    id: room_temp
+    address: ${temp_room_address}
+    name: "Temperature"
+    one_wire_id: dallas_room
+    accuracy_decimals: 2
+    update_interval: 30s
+    filters:
+      - offset: ${temp_room_offset}
+      - sliding_window_moving_average:
+          window_size: 5 # Average over this number of last measurements
+          send_every: 2 # When sensor update interval is 30s, new value will be pushed every minute

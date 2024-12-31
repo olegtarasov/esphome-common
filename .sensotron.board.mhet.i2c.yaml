@@ -1,0 +1,6 @@
+packages:
+  board: !include .board.mhet.arduino.yaml
+
+i2c:
+  sda: GPIO17
+  scl: GPIO21

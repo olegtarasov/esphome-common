@@ -1,0 +1,7 @@
+packages:
+  board: !include .board.mhet.arduino.yaml
+
+one_wire:
+  - platform: gpio
+    pin: GPIO21
+    id: dallas_room
