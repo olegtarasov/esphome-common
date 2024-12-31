@@ -1,5 +1,5 @@
 packages:
-  board: !include .board.s3_micro.yaml
+  board: !include .board.s3_micro.arduino.yaml
 
 one_wire:
   - platform: gpio

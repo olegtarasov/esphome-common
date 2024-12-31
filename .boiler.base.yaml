@@ -5,9 +5,9 @@ globals:
     type: bool
     initial_value: "false"
 
-external_components:
-  source: github://olegtarasov/esphome-opentherm@v1.0.5-pre2
-  refresh: 0s
+# external_components:
+#   source: github://olegtarasov/esphome-opentherm@v1.0.5-pre2
+#   refresh: 0s
 
 # Platforms
 ## Boiler
@@ -113,6 +113,7 @@ sensor:
     # Later: Occasional scratchpad errors didn't go away. Will leave interval at 30s regardless.
     update_interval: 30s
     filters:
+      - offset: ${temp_room_offset}
       - sliding_window_moving_average:
           window_size: 5 # Average over this number of last measurements
           send_every: 2 # When sensor update interval is 30s, new value will be pushed every minute
