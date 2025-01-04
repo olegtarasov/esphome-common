@@ -18,6 +18,7 @@ sensor:
   - platform: template
     id: temp_input
     internal: true
+    accuracy_decimals: 2
     update_interval: never # Other sensors push to this one
     filters:
       # PID regulator updates its parameters only on sensor signal, so we push the last value every second

@@ -4,8 +4,6 @@ sensor:
     id: temp_min_room_temp
     entity_id: climate.master_room_climate
     attribute: current_temperature
-    filters:
-      - heartbeat: 1s
     on_value:
       then:
         - lambda: |-
@@ -45,9 +43,9 @@ binary_sensor:
       then:
         lambda: |-
           if (x) {
-            id(temp_input).publish_state(id(temp_room).state);
-          } else {
             id(temp_input).publish_state(id(temp_min_room_temp).state);
+          } else {
+            id(temp_input).publish_state(id(temp_room).state);
           }
 
 switch:
