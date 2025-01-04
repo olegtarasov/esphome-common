@@ -7,11 +7,10 @@ output:
     write_action:
       then:
         - lambda: |-
-            if(!id(ha_status).state || !id(use_ha_thermostat).state || isnan(id(ha_pid_output).state)) {
+            if(!id(final_pid_ha).state) {
               ESP_LOGD("pid_internal", "Sending internal PID output to OpenTherm: %.2f", state);
               id(ch_setpoint).write_state(state);
               id(final_pid_output).publish_state(state);
-              id(final_pid_ha).publish_state(false);
             }
 
 sensor:

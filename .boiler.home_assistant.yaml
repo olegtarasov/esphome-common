@@ -47,14 +47,16 @@ script:
   - id: send_ha_pid
     then:
       - lambda: |-
-          if (id(ha_status).state && id(use_ha_thermostat).state && id(internal_pid).mode == CLIMATE_MODE_HEAT) {
+          if (id(final_pid_ha).state && id(internal_pid).mode == CLIMATE_MODE_HEAT) {
             float value = id(ha_pid_output).state;
+
+            // Additional check if value changed from when final_pid_ha was last recalculated
             if (isnan(value)) {
               ESP_LOGW("pid_ha", "HA PID Output is NaN, will not send to OpenTherm");
               return;
             }
+
             ESP_LOGD("pid_ha", "Sending HA PID output to OpenTherm: %.2f", value);
             id(ch_setpoint).write_state(value);
             id(final_pid_output).publish_state(value);
-            id(final_pid_ha).publish_state(true);
           }
