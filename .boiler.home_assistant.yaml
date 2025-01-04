@@ -9,7 +9,7 @@ sensor:
     on_value:
       then:
         - lambda: |-
-            if (id(ha_status).state && id(use_ha_thermostat).state) {
+            if (id(final_pid_ha).state) {
               id(temp_input).publish_state(x);
             }
   - platform: homeassistant
@@ -35,6 +35,20 @@ binary_sensor:
   - platform: status
     id: ha_status
     name: "HA Connection Status"
+  - platform: template
+    id: final_pid_ha
+    name: "Using HA PID"
+    entity_category: diagnostic
+    lambda: |-
+      return id(ha_status).state && id(use_ha_thermostat).state && !isnan(id(ha_pid_output).state);
+    on_state:
+      then:
+        lambda: |-
+          if (x) {
+            id(temp_input).publish_state(id(temp_room).state);
+          } else {
+            id(temp_input).publish_state(id(temp_min_room_temp).state);
+          }
 
 switch:
   - platform: template

@@ -176,9 +176,3 @@ binary_sensor:
       id: boiler_diagnostic
       name: "Boiler Diagnostic"
       entity_category: diagnostic
-  - platform: template
-    id: final_pid_ha
-    name: "Using HA PID"
-    entity_category: diagnostic
-    lambda: |-
-      return id(ha_status).state && id(use_ha_thermostat).state && !isnan(id(ha_pid_output).state);
