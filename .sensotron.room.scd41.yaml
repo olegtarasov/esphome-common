@@ -1,16 +1,13 @@
-packages:
-  base: !include .base_device.yaml
-  room: !include .sensotron.room.i2c.yaml
-
 sensor:
   - platform: scd4x
+    id: scd_sensor
     temperature:
-      name: "Temperature"
+      name: "SCD Temperature"
       accuracy_decimals: 2
-      filters:
-        - exponential_moving_average:
-            alpha: 0.1
-            send_every: 10
+      # filters:
+      #   - exponential_moving_average:
+      #       alpha: 0.1
+      #       send_every: 10
     humidity:
       name: "Humidity"
       accuracy_decimals: 2
@@ -18,3 +15,21 @@ sensor:
       name: "CO2"
     temperature_offset: ${temp_room_offset}
     update_interval: 10s
+
+button:
+  - platform: template
+    id: scd_calibratrion
+    entity_category: config
+    name: "Calibrate SCD"
+    on_press:
+      then:
+        - scd4x.perform_forced_calibration:
+            value: 425
+            id: scd_sensor
+  - platform: template
+    id: scd_reset
+    entity_category: config
+    name: "Factory reset SCD"
+    on_press:
+      then:
+        - scd4x.factory_reset: scd_sensor
