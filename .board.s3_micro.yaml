@@ -4,9 +4,9 @@ esp32:
   framework:
     type: esp-idf
 
-# wifi:
-#   enable_btm: true
-#   enable_rrm: true
+wifi:
+  enable_btm: true
+  enable_rrm: true
 
 # Turn off the light on boot
 light:

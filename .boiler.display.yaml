@@ -98,7 +98,7 @@ display:
           id(nextion_display).set_component_value("main.chsetpoint", (int)(round(id(internal_pid)->target_temperature * 10)));
           id(nextion_display).set_component_value("main.dhwsetpoint", (int)(round(id(dhw_setpoint)->state * 10)));
           id(nextion_display).set_component_value("main.roomtemp", (int)(round(id(temp_input)->state * 10)));
-          // id(nextion_display).set_component_value("main.dhwtemp", (int)(round(id(temp_dhw_internal)->state * 10))); // We need to scale the float in order to emulate them in Nextion
+          id(nextion_display).set_component_value("main.dhwtemp", (int)(round(id(temp_dhw_internal)->state * 10))); // We need to scale the float in order to emulate them in Nextion
           id(nextion_display).set_component_value("main.chenabled", id(ch_enable)->state);
           id(nextion_display).set_component_value("main.dhwenabled", id(dhw_enable)->state);
 

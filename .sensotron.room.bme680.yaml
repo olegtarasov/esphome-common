@@ -6,26 +6,26 @@ bme68x_bsec2_i2c:
 sensor:
   - platform: bme68x_bsec2
     temperature:
-      name: "Temperature"
+      name: "Temperature (BME680)"
       accuracy_decimals: 2
     pressure:
-      name: "Pressure"
+      name: "Pressure (BME680)"
       accuracy_decimals: 2
     humidity:
-      name: "Humidity"
+      name: "Humidity (BME680)"
       accuracy_decimals: 2
     gas_resistance:
-      name: "Gas resistance"
+      name: "Gas resistance (BME680)"
     iaq:
-      name: "IAQ"
+      name: "IAQ (BME680)"
     iaq_static:
-      name: "IAQ Static"
+      name: "IAQ Static (BME680)"
     co2_equivalent:
-      name: "CO2 Equivalent"
+      name: "CO2 Equivalent (BME680)"
     breath_voc_equivalent:
-      name: "Breath VOC Equivalent"
+      name: "Breath VOC Equivalent (BME680)"
 
 text_sensor:
   - platform: bme68x_bsec2
     iaq_accuracy:
-      name: "IAQ Accuracy"
+      name: "IAQ Accuracy (BME680)"

@@ -2,19 +2,19 @@ sensor:
   - platform: scd4x
     id: scd_sensor
     temperature:
-      name: "SCD Temperature"
+      name: "Temperature (SCD41)"
       accuracy_decimals: 2
       # filters:
       #   - exponential_moving_average:
       #       alpha: 0.1
       #       send_every: 10
     humidity:
-      name: "Humidity"
+      name: "Humidity (SCD41)"
       accuracy_decimals: 2
     co2:
-      name: "CO2"
-    temperature_offset: ${temp_room_offset}
-    update_interval: 10s
+      name: "CO2 (SCD41)"
+    temperature_offset: ${temp_scd41_offset}
+    update_interval: 30s
 
 button:
   - platform: template
