@@ -1,0 +1,6 @@
+packages:
+  board: !include .board.c6_micro.yaml
+
+i2c:
+  sda: GPIO20
+  scl: GPIO19

@@ -2,7 +2,7 @@ sensor:
   # HA sensors
   - platform: homeassistant
     id: temp_min_room_temp
-    entity_id: climate.master_room_climate
+    entity_id: ${ha_room_climate_entity}
     attribute: current_temperature
     on_value:
       then:
@@ -12,18 +12,20 @@ sensor:
             }
   - platform: homeassistant
     id: ha_pid_output
-    entity_id: sensor.master_pid_output
+    entity_id: ${ha_master_pid_output_entity}
     on_value:
       then:
         - lambda: |-
             id(send_ha_pid).execute();
   - platform: homeassistant
     id: ha_room_setpoint
-    entity_id: climate.master_room_climate
+    entity_id: ${ha_room_climate_entity}
     attribute: temperature
     on_value:
       then:
         - lambda: |-
+            if (isnan(x))
+              return;
             auto call = id(internal_pid)->make_call();
             call.set_target_temperature(x);
             call.perform();

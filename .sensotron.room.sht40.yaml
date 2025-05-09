@@ -6,4 +6,4 @@ sensor:
         - offset: ${temp_st40_offset}
     humidity:
       name: "Humidity (SHT40)"
-    update_interval: 30s
+    update_interval: 10s

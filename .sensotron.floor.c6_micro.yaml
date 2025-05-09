@@ -1,0 +1,7 @@
+packages:
+  sensor: !include .sensotron.floor.sensor.yaml
+
+one_wire:
+  - platform: gpio
+    pin: GPIO14
+    id: dallas_floor

@@ -6,9 +6,9 @@ sensor:
       accuracy_decimals: 2
       filters:
         - offset: ${temp_room_offset}
-        - exponential_moving_average:
-            alpha: 0.1
-            send_every: 10
+        # - exponential_moving_average:
+        #     alpha: 0.1
+        #     send_every: 5
     pressure:
       name: "Pressure (BME280)"
       accuracy_decimals: 2
@@ -16,4 +16,4 @@ sensor:
       name: "Humidity (BME280)"
       accuracy_decimals: 2
     iir_filter: 16x
-    update_interval: 30s
+    update_interval: 20s
