@@ -6,7 +6,7 @@ globals:
     initial_value: "false"
 
 # external_components:
-#   source: github://olegtarasov/esphome-opentherm@v1.0.5-pre2
+#   source: github://olegtarasov/esphome-opentherm@rmt
 #   refresh: 0s
 
 # Platforms

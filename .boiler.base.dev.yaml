@@ -121,13 +121,14 @@ sensor:
     # Later: Occasional scratchpad errors didn't go away. Will leave interval at 30s regardless.
     update_interval: 30s
     filters:
+      - offset: ${temp_room_offset}
       - sliding_window_moving_average:
           window_size: 5 # Average over this number of last measurements
           send_every: 2 # When sensor update interval is 30s, new value will be pushed every minute
     on_value:
       then:
         - lambda: |-
-            if (!id(ha_status).state || !id(use_ha_thermostat).state) {
+            if (!id(final_pid_ha).state) {
               id(temp_input).publish_state(x);
             }
 
