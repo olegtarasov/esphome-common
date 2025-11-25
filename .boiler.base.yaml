@@ -91,6 +91,7 @@ sensor:
   - platform: template
     id: final_pid_output
     name: "Final PID Output"
+    state_class: measurement
     accuracy_decimals: 2
     entity_category: diagnostic
   # Boiler sensors

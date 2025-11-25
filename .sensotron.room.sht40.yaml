@@ -4,6 +4,9 @@ sensor:
       name: "Temperature (SHT40)"
       filters:
         - offset: ${temp_sht40_offset}
+        - sliding_window_moving_average:
+            window_size: 5 # Average over this number of last measurements
+            send_every: 2 # When sensor update interval is 30s, new value will be pushed every 60s
     humidity:
       name: "Humidity (SHT40)"
-    update_interval: 10s
+    update_interval: 30s
